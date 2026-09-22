@@ -13,11 +13,9 @@ pub struct Rung {
     pub name: &'static str,
     /// How big the thing itself is, in metres. This is the number the
     /// app shows and the mark on the ruler: the ladder is about the
-    /// things, not about the frames they are drawn in.
+    /// things, not about the frames they are drawn in. Each scene
+    /// chooses its own framing, always with room around the thing.
     pub size: f64,
-    /// How wide the picture is. Always larger than the thing, so it has
-    /// room around it.
-    pub span: f64,
     pub blurb: &'static str,
 }
 
@@ -25,79 +23,79 @@ pub struct Rung {
 pub const HUMAN: usize = 14;
 
 pub const RUNGS: &[Rung] = &[
-    Rung { name: "Quantum foam", size: 1.6e-35, span: 1e-34,
+    Rung { name: "Quantum foam", size: 1.6e-35,
         blurb: "The smallest length that means anything. Below this, distance itself stops making sense." },
-    Rung { name: "Quark", size: 1e-18, span: 1e-17,
+    Rung { name: "Quark", size: 1e-18,
         blurb: "No experiment has ever found a quark to have any size at all. This is only the room it moves in." },
-    Rung { name: "Proton", size: 1.7e-15, span: 5e-15,
+    Rung { name: "Proton", size: 1.7e-15,
         blurb: "Three quarks, and the force between them. Almost all the mass is that force, not the quarks." },
-    Rung { name: "Carbon nucleus", size: 5.4e-15, span: 2e-14,
+    Rung { name: "Carbon nucleus", size: 5.4e-15,
         blurb: "Six protons and six neutrons, packed as tight as matter goes. Every atom of you is built around one of these." },
-    Rung { name: "Carbon atom", size: 1.4e-10, span: 3e-10,
+    Rung { name: "Carbon atom", size: 1.4e-10,
         blurb: "The nucleus is the dot in the middle. The rest is electrons, and the rest is almost all of it." },
-    Rung { name: "Water molecule", size: 2.8e-10, span: 1e-9,
+    Rung { name: "Water molecule", size: 2.8e-10,
         blurb: "One oxygen, two hydrogens, at an angle of 104.5 degrees. That angle is why water behaves as it does." },
-    Rung { name: "DNA", size: 2.4e-09, span: 1e-8,
+    Rung { name: "DNA", size: 2.4e-09,
         blurb: "Two metres of this is coiled inside nearly every cell you have." },
-    Rung { name: "Virus", size: 1e-07, span: 3e-7,
+    Rung { name: "Virus", size: 1e-07,
         blurb: "A shell of protein around a set of instructions. Too small to be alive on its own." },
-    Rung { name: "Bacterium", size: 2e-06, span: 6e-6,
+    Rung { name: "Bacterium", size: 2e-06,
         blurb: "One cell, no nucleus, and more of these live on you than you have cells of your own." },
-    Rung { name: "Red blood cell", size: 8e-06, span: 3e-5,
+    Rung { name: "Red blood cell", size: 8e-06,
         blurb: "Dished on both sides to carry more oxygen. You make about two million of them every second." },
-    Rung { name: "Human hair", size: 7e-05, span: 2e-4,
+    Rung { name: "Human hair", size: 7e-05,
         blurb: "Thin enough to be a byword for thin, and still ten times a red blood cell." },
-    Rung { name: "Grain of sand", size: 0.0005, span: 2e-3,
+    Rung { name: "Grain of sand", size: 0.0005,
         blurb: "The smallest thing you can pick up and look at." },
-    Rung { name: "Ant", size: 0.005, span: 1.5e-2,
+    Rung { name: "Ant", size: 0.005,
         blurb: "The smallest thing that walks about with a plan." },
-    Rung { name: "Human hand", size: 0.19, span: 0.5,
+    Rung { name: "Human hand", size: 0.19,
         blurb: "The part of you that made everything else on this ladder." },
-    Rung { name: "Human body", size: 1.7, span: 2.5,
+    Rung { name: "Human body", size: 1.7,
         blurb: "You are here, almost exactly halfway between the smallest thing and the largest." },
-    Rung { name: "Blue whale", size: 30.0, span: 60.0,
+    Rung { name: "Blue whale", size: 30.0,
         blurb: "The largest animal that has ever lived, with a person beside it." },
-    Rung { name: "Football pitch", size: 105.0, span: 250.0,
+    Rung { name: "Football pitch", size: 105.0,
         blurb: "The size of a thing you can see all of, standing still." },
-    Rung { name: "Skyscraper", size: 828.0, span: 1.2e3,
+    Rung { name: "Skyscraper", size: 828.0,
         blurb: "The tallest things people build, still less than a thousandth of the air above them." },
-    Rung { name: "Mount Everest", size: 8849.0, span: 2.4e4,
+    Rung { name: "Mount Everest", size: 8849.0,
         blurb: "The highest ground on Earth, and a smaller bump than it feels from below." },
-    Rung { name: "City at night", size: 20000.0, span: 6e4,
+    Rung { name: "City at night", size: 20000.0,
         blurb: "Millions of lives, and from here only the lights." },
-    Rung { name: "Coastline from orbit", size: 1.8e+06, span: 2e6,
+    Rung { name: "Coastline from orbit", size: 1.8e+06,
         blurb: "A country, seen the way weather sees it." },
-    Rung { name: "The Moon", size: 3.475e+06, span: 8e6,
+    Rung { name: "The Moon", size: 3.475e+06,
         blurb: "The only other ground anyone has stood on." },
-    Rung { name: "The Earth", size: 1.2742e+07, span: 3e7,
+    Rung { name: "The Earth", size: 1.2742e+07,
         blurb: "Everything anyone has ever done, apart from a few days, happened here." },
-    Rung { name: "Jupiter", size: 1.3982e+08, span: 4e8,
+    Rung { name: "Jupiter", size: 1.3982e+08,
         blurb: "Eleven Earths across, and made of almost nothing but the two lightest gases." },
-    Rung { name: "The Sun", size: 1.3927e+09, span: 4e9,
+    Rung { name: "The Sun", size: 1.3927e+09,
         blurb: "A million Earths would fit inside. The dot is Earth, to scale." },
-    Rung { name: "Earth's orbit", size: 1.496e+11, span: 6e11,
+    Rung { name: "Earth's orbit", size: 1.496e+11,
         blurb: "Light takes eight minutes to cross from the middle to here." },
-    Rung { name: "The solar system", size: 9e+12, span: 2e13,
+    Rung { name: "The solar system", size: 9e+12,
         blurb: "Out to Neptune. Everything you have ever seen with your own eyes sits inside this circle, bar the stars." },
-    Rung { name: "The Oort cloud", size: 3e+16, span: 4e16,
+    Rung { name: "The Oort cloud", size: 3e+16,
         blurb: "A shell of ice around the Sun, a thousand times further out than the planets. The comets come from here." },
-    Rung { name: "The nearest stars", size: 4e+16, span: 1.2e17,
+    Rung { name: "The nearest stars", size: 4e+16,
         blurb: "The Sun is one of these. The next one along is four light years away, and that is close." },
-    Rung { name: "The Orion Nebula", size: 2.4e+17, span: 5e17,
+    Rung { name: "The Orion Nebula", size: 2.4e+17,
         blurb: "Stars being made, right now, and near enough to see with your eyes on a dark night." },
-    Rung { name: "A globular cluster", size: 9.5e+17, span: 3e18,
+    Rung { name: "A globular cluster", size: 9.5e+17,
         blurb: "A million old stars held together since the galaxy was young." },
-    Rung { name: "The Milky Way", size: 9.5e+20, span: 3e21,
+    Rung { name: "The Milky Way", size: 9.5e+20,
         blurb: "A few hundred billion stars. Every star you have ever seen by eye is one of them, and all of them are nearby." },
-    Rung { name: "The Local Group", size: 9.5e+22, span: 3e23,
+    Rung { name: "The Local Group", size: 9.5e+22,
         blurb: "Our galaxy, Andromeda, and about eighty smaller ones, falling towards each other." },
-    Rung { name: "The Virgo Cluster", size: 1.4e+23, span: 1e24,
-        blurb: "A thousand galaxies, and the nearest place where gravity beats the expansion of space." },
-    Rung { name: "Laniakea", size: 5.2e+24, span: 1e25,
+    Rung { name: "The Virgo Cluster", size: 1.4e+23,
+        blurb: "A thousand galaxies. The beam is M87's jet, thrown five thousand light years by a black hole." },
+    Rung { name: "Laniakea", size: 5.2e+24,
         blurb: "A hundred thousand galaxies, all drifting the same way. The name means immeasurable heaven." },
-    Rung { name: "The cosmic web", size: 1e+25, span: 1e26,
+    Rung { name: "The cosmic web", size: 1e+25,
         blurb: "Galaxies string along filaments, and between them the voids are almost perfectly empty." },
-    Rung { name: "The observable universe", size: 8.8e+26, span: 1.15e27,
+    Rung { name: "The observable universe", size: 8.8e+26,
         blurb: "As far as light has had time to reach us. The edge is the glow left over from the beginning." },
 ];
 
@@ -957,8 +955,35 @@ fn virgo(c: &mut Canvas, w: f64, h: f64) {
         let k = d.next().powf(2.0);
         c.disc(cx + a.cos() * k * w * 0.045, cy + a.sin() * k * w * 0.042, d.span(0.3, 0.9), (255, 240, 210), (1.0 - k) * 0.85);
     }
-    c.line((cx, cy), (cx + w * 0.11, cy - h * 0.09), 1.6, (170, 210, 255), 0.7);
-    halo(c, cx + w * 0.06, cy - h * 0.05, w * 0.02, (160, 200, 255), 0.35);
+    // M87's jet: a beam of plasma thrown out of the black hole at the
+    // middle of that galaxy, five thousand light years long. It widens
+    // as it goes and is beaded with knots, which is how it is known.
+    let mut j = Dice::new(401);
+    let len = w * 0.14;
+    let ang: f64 = -0.66;
+    let (dx, dy) = (ang.cos(), ang.sin());
+    let unit = (w / 600.0).max(0.55);
+    let along = |t: f64| (cx + dx * (w * 0.01 + len * t), cy + dy * (w * 0.01 + len * t));
+    let width = |t: f64| (0.7 + t * 3.6) * unit;
+    for i in 0..140 {
+        let t = i as f64 / 140.0;
+        let (x, y) = along(t);
+        let wide = width(t);
+        // A slow wander, so the beam is not a ruled line.
+        let wob = (t * 7.0).sin() * wide * 0.6 + j.span(-0.3, 0.3) * wide;
+        let (px, py) = (x - dy * wob, y + dx * wob);
+        let fade = (1.0 - t).powf(0.55);
+        halo(c, px, py, wide * 3.2, (140, 180, 255), 0.16 * fade);
+        c.disc(px, py, wide * 0.5, (200, 222, 255), 0.45 * fade);
+    }
+    for k in 0..6 {
+        let t = 0.14 + k as f64 / 6.0 * 0.8;
+        let (x, y) = along(t);
+        let wide = width(t);
+        let br = (1.0 - t).powf(0.45) * j.span(0.65, 1.0);
+        halo(c, x, y, wide * 5.5, (165, 200, 255), 0.26 * br);
+        c.disc(x, y, wide * 0.85, (238, 246, 255), 0.8 * br);
+    }
 }
 
 fn laniakea(c: &mut Canvas, w: f64, h: f64) {

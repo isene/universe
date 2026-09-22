@@ -425,10 +425,6 @@ mod tests {
     fn the_ladder_only_ever_grows() {
         for pair in RUNGS.windows(2) {
             assert!(pair[1].size > pair[0].size, "{} is not larger than {}", pair[1].name, pair[0].name);
-            assert!(pair[1].span > pair[0].span, "{}'s picture is not wider", pair[1].name);
-        }
-        for r in RUNGS {
-            assert!(r.span > r.size, "{} has no room around it", r.name);
         }
         assert_eq!(RUNGS[HUMAN].name, "Human body", "the app opens on a person");
     }

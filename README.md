@@ -39,7 +39,7 @@ Nothing moves by itself. A picture is painted when you change rung or resize the
 
 The bar along the bottom runs over every power of ten from 10⁻³⁵ metres to 10²⁷. The diamond is where you are.
 
-The size in the top bar is the thing itself, not the picture. Earth's orbit reads 1 AU, and Everest reads 8.85 km. The picture is always wider than that, so each thing has room around it.
+The size in the top bar is the thing itself, not the picture. Earth's orbit reads 1 AU, and Everest reads 8.85 km. Each picture is wider than its thing, so there is room around it.
 
 ## The photographs
 
