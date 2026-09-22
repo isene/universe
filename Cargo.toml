@@ -1,6 +1,6 @@
 [package]
 name = "universe"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Every scale of the universe, from the quantum foam to the cosmic web"
 license = "Unlicense"
@@ -10,6 +10,7 @@ authors = ["Geir Isene <g@isene.com>"]
 [dependencies]
 crust = { version = "0.1", path = "../crust", package = "fe2o3-crust" }
 glow = { version = "0.1", path = "../glow", package = "fe2o3-glow" }
+image = { version = "0.25", default-features = false, features = ["jpeg"] }
 
 [profile.release]
 opt-level = 3

@@ -10,6 +10,7 @@
 
 mod ladder;
 mod paint;
+mod photo;
 
 use crust::style;
 use crust::{seq, Crust, Cursor, Input, Pane};
@@ -29,7 +30,15 @@ const HIGH: f64 = 27.0;
 struct App {
     step: usize,
     pixels: Option<glow::Display>,
+    /// The last few pictures painted, newest first, each with the size
+    /// it was painted for. Stepping back to a rung you just left costs
+    /// nothing; the heaviest scene otherwise takes about half a second.
+    recent: Vec<(usize, u16, u16, glow::Canvas)>,
 }
+
+/// How many pictures to keep. Three covers stepping up and down through
+/// a run of rungs without holding much memory.
+const KEEP: usize = 3;
 
 fn main() {
     let mut start: Option<usize> = None;
@@ -93,6 +102,7 @@ fn main() {
     let mut app = App {
         step: start.unwrap_or_else(|| remembered().unwrap_or(HUMAN)),
         pixels: None,
+        recent: Vec::new(),
     };
 
     Crust::init();
@@ -284,26 +294,35 @@ fn draw_header(app: &App, cols: u16) {
     );
 }
 
-/// The picture area: rows 2 to rows-3.
+/// The picture area: row 2 down to four rows from the bottom, which
+/// leaves the caption, the ruler and a clear line above the status bar.
 fn picture_rows(rows: u16) -> u16 {
-    rows.saturating_sub(4).max(1)
+    rows.saturating_sub(5).max(1)
 }
 
 fn draw_picture(app: &mut App, cols: u16, rows: u16) {
     let ph = picture_rows(rows);
     let pixels = app.pixels.get_or_insert_with(glow::Display::new).supported();
+    // Four pixels per cell where there are no real ones, then averaged
+    // down to half-blocks: the shapes keep their edges.
+    let cell = if pixels { None } else { Some((2u16, 4u16)) };
+    // The picture is taken out of the store while it is drawn, and put
+    // back at the front afterwards, newest first.
+    let found = app.recent.iter().position(|(s, c, r, _)| *s == app.step && *c == cols && *r == ph);
+    let held = match found {
+        Some(i) => app.recent.remove(i),
+        None => {
+            let mut c = glow::Canvas::sized(cols, ph, cell);
+            ladder::paint(app.step, &mut c);
+            (app.step, cols, ph, c)
+        }
+    };
     if pixels {
-        let mut canvas = glow::Canvas::new(cols, ph);
-        ladder::paint(app.step, &mut canvas);
         if let Some(d) = app.pixels.as_mut() {
-            d.swap_canvas(&canvas, 1, 2);
+            d.swap_canvas(&held.3, 1, 2);
         }
     } else {
-        // Four pixels per cell, then averaged down to half-blocks: the
-        // shapes keep their edges instead of turning into stairs.
-        let mut canvas = glow::Canvas::with_cell(cols, ph, (2, 4));
-        ladder::paint(app.step, &mut canvas);
-        let lines = paint::half_blocks(&canvas, cols, ph);
+        let lines = paint::half_blocks(&held.3, cols, ph);
         let mut s = String::new();
         for (i, line) in lines.iter().enumerate() {
             s.push_str(&move_to(2 + i as u16, 1));
@@ -311,19 +330,26 @@ fn draw_picture(app: &mut App, cols: u16, rows: u16) {
         }
         print!("{s}");
     }
+    app.recent.insert(0, held);
+    app.recent.truncate(KEEP);
 }
 
 fn draw_foot(app: &App, cols: u16, rows: u16) {
     let r = &RUNGS[app.step];
     let w = cols as usize;
-    // The one line about what you are looking at, centred under it.
-    let blurb = fit(r.blurb, w.saturating_sub(2));
-    let left = (w.saturating_sub(crust::display_width(&blurb))) / 2;
+    // The caption names the thing first, then says what it is, so the
+    // picture is never left to speak for itself.
+    let name = format!("{}  ", r.name);
+    let room = w.saturating_sub(crust::display_width(&name) + 2);
+    let blurb = fit(r.blurb, room);
+    let line = format!("{name}{blurb}");
+    let left = (w.saturating_sub(crust::display_width(&line))) / 2;
     print!(
-        "{}{}{}",
-        move_to(rows - 2, 1),
+        "{}{}{}{}",
+        move_to(rows - 3, 1),
         " ".repeat(left),
-        style::rgb(&blurb, Some(DIM_RGB), None, "i")
+        style::rgb(&name, Some(HEAD_RGB), None, "b"),
+        style::rgb(&blurb, Some(DIM_RGB), None, "")
     );
     print!("{}", seq::ERASE_EOL);
 
@@ -347,12 +373,14 @@ fn draw_foot(app: &App, cols: u16, rows: u16) {
     }
     print!(
         "{} {}{} {}",
-        move_to(rows - 1, 1),
+        move_to(rows - 2, 1),
         style::rgb(&lo, Some((110, 110, 130)), None, ""),
         track,
         style::rgb(&hi, Some((110, 110, 130)), None, "")
     );
     print!("{}", seq::ERASE_EOL);
+    // A clear line, so the ruler does not sit on the status bar.
+    print!("{}{}", move_to(rows - 1, 1), seq::ERASE_EOL);
 }
 
 /// Cut a line to fit, with a full stop rather than a broken word.
@@ -431,6 +459,24 @@ mod tests {
             ladder::paint(i, &mut c);
             let lit = c.rgba.chunks(4).filter(|p| p[0] > 12 || p[1] > 12 || p[2] > 12).count();
             assert!(lit > 40, "rung {} ({}) drew almost nothing", i, RUNGS[i].name);
+        }
+    }
+}
+
+#[cfg(test)]
+mod timing {
+    use super::*;
+    #[test]
+    #[ignore]
+    fn how_long_each_rung_takes() {
+        for i in 0..RUNGS.len() {
+            let t = std::time::Instant::now();
+            let mut c = glow::Canvas::with_cell(190, 50, (10, 20));
+            ladder::paint(i, &mut c);
+            let ms = t.elapsed().as_millis();
+            if ms > 40 {
+                println!("{:>3} {:<26} {ms} ms", i + 1, RUNGS[i].name);
+            }
         }
     }
 }

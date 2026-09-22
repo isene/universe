@@ -5,6 +5,7 @@
 //! really does look like a step outwards.
 
 use crate::paint::*;
+use crate::photo::{self, Pic};
 use glow::Canvas;
 use std::f64::consts::{PI, TAU};
 
@@ -152,26 +153,26 @@ pub fn paint(i: usize, c: &mut Canvas) {
 fn foam(c: &mut Canvas, w: f64, h: f64) {
     fill(c, (6, 4, 14));
     let mut d = Dice::new(11);
-    // Loops and kinks of space, forming and going again.
-    for _ in 0..260 {
+    // Loops and kinks of space, forming and going again. The rings do
+    // the work; the glow around them is kept small, or this one scene
+    // would cost more than all the others together.
+    for _ in 0..240 {
         let x = d.next() * w;
         let y = d.next() * h;
-        let r = d.span(0.01, 0.05) * w;
-        let hue = d.next();
-        let rgb = mix((120, 80, 220), (60, 190, 210), hue);
-        halo(c, x, y, r * 2.2, rgb, 0.10);
+        let r = d.span(0.008, 0.035) * w;
+        let rgb = mix((120, 80, 220), (60, 190, 210), d.next());
+        halo(c, x, y, r * 1.2, rgb, 0.16);
         c.ring(x, y, r, rgb, d.span(0.25, 0.7));
     }
-    for _ in 0..140 {
+    for _ in 0..200 {
         let x = d.next() * w;
         let y = d.next() * h;
         let a = d.next() * TAU;
-        let l = d.span(0.01, 0.06) * w;
+        let l = d.span(0.008, 0.045) * w;
         let p = (x + a.cos() * l, y + a.sin() * l);
         c.line((x, y), p, 1.2, mix((200, 170, 255), (255, 255, 255), d.next()), d.span(0.2, 0.6));
     }
 }
-
 fn quark(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (5, 3, 12));
     let r = u * 0.62;
@@ -359,44 +360,44 @@ fn bacterium(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     for k in 0..4 {
         let y = cy + (k as f64 - 1.5) * rad * 0.5;
         let mut prev = (cx + len, y);
-        for s in 1..=40 {
-            let t = s as f64 / 40.0;
+        for s in 1..=30 {
+            let t = s as f64 / 30.0;
             let x = cx + len + t * u * 0.9;
             let yy = y + (t * 9.0 + k as f64).sin() * rad * 0.45 * t;
             c.line(prev, (x, yy), u * 0.016, (150, 210, 180), 0.75);
             prev = (x, yy);
         }
     }
-    // A capsule: two ends and the middle.
-    c.line((cx - len, cy), (cx + len, cy), rad * 2.0, (90, 190, 140), 1.0);
-    ball(c, cx - len, cy, rad, (110, 210, 160), (-0.5, -0.6));
-    ball(c, cx + len, cy, rad, (110, 210, 160), (-0.5, -0.6));
-    for x in 0..((len * 2.0) as usize) {
-        let xx = cx - len + x as f64;
-        let t = (xx - (cx - len)) / (len * 2.0);
-        let _ = t;
-        for y in 0..(rad as usize * 2) {
-            let yy = cy - rad + y as f64;
-            let dy = (yy - cy) / rad;
-            if dy.abs() > 1.0 {
+    // The body as one pass over its box: distance to the middle line
+    // gives both the outline and the shading, so nothing is drawn twice.
+    let (x0, x1) = ((cx - len - rad) as i64, (cx + len + rad) as i64);
+    let (y0, y1) = ((cy - rad) as i64, (cy + rad) as i64);
+    for y in y0.max(0)..y1.min(c.h as i64) {
+        for x in x0.max(0)..x1.min(c.w as i64) {
+            let px = x as f64 + 0.5;
+            let py = y as f64 + 0.5;
+            // How far from the line between the two end points.
+            let nearest = px.clamp(cx - len, cx + len);
+            let dx = px - nearest;
+            let dy = py - cy;
+            let dist = (dx * dx + dy * dy).sqrt() / rad;
+            if dist > 1.0 {
                 continue;
             }
-            let f = 0.35 + 0.8 * (1.0 - dy * dy).sqrt() * (0.5 - dy * 0.5 + 0.5);
-            c.blend(xx as i64, yy as i64, shade((110, 210, 160), f), 1.0);
+            let round = (1.0 - dist * dist).sqrt();
+            let lit = 0.35 + 0.85 * round * (1.0 - (dy / rad + 0.35).abs() * 0.45).max(0.25);
+            let edge = ((1.0 - dist) * rad).clamp(0.0, 1.0);
+            c.blend(x, y, shade((104, 200, 152), lit), edge);
         }
     }
     // The tangle of DNA inside.
     let mut prev = (cx - len * 0.5, cy);
-    for _ in 0..70 {
-        let p = (
-            cx + d.span(-len * 0.75, len * 0.75),
-            cy + d.span(-rad * 0.55, rad * 0.55),
-        );
-        c.line(prev, p, u * 0.012, (60, 130, 100), 0.5);
+    for _ in 0..60 {
+        let p = (cx + d.span(-len * 0.75, len * 0.75), cy + d.span(-rad * 0.55, rad * 0.55));
+        c.line(prev, p, u * 0.012, (58, 128, 98), 0.5);
         prev = p;
     }
 }
-
 fn blood(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (24, 6, 10));
     let mut d = Dice::new(71);
@@ -483,180 +484,65 @@ fn sand(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
         (cx + u * 0.2, cy - u * 0.7, u * 0.2, (170, 150, 120)),
     ];
     for (x, y, r, rgb) in grains {
-        // An irregular lump: a ring of points at wandering radii, filled.
-        let n = 11;
-        let mut pts = Vec::new();
+        // An irregular lump: a ring of wandering radii, filled by a
+        // single pass over the box rather than by fanning lines.
+        let n = 13;
+        let mut edge = [0.0f64; 13];
         for k in 0..n {
-            let a = k as f64 / n as f64 * TAU;
-            let rr = r * d.span(0.7, 1.15);
-            pts.push((x + a.cos() * rr, y + a.sin() * rr));
+            edge[k] = r * d.span(0.68, 1.15);
         }
-        for k in 0..n {
-            let p = pts[k];
-            let q = pts[(k + 1) % n];
-            c.line(p, q, r * 0.1, shade(rgb, 0.7), 1.0);
-            // Fill by fanning to the middle.
-            for s in 0..24 {
-                let t = s as f64 / 24.0;
-                let a = (x + (p.0 - x) * t, y + (p.1 - y) * t);
-                let b = (x + (q.0 - x) * t, y + (q.1 - y) * t);
-                let f = 0.45 + 0.75 * (1.0 - t);
-                c.line(a, b, r * 0.09, shade(rgb, f), 1.0);
+        let (x0, x1) = ((x - r * 1.2) as i64, (x + r * 1.2) as i64);
+        let (y0, y1) = ((y - r * 1.2) as i64, (y + r * 1.2) as i64);
+        for py in y0.max(0)..y1.min(c.h as i64) {
+            for px in x0.max(0)..x1.min(c.w as i64) {
+                let (dx, dy) = (px as f64 + 0.5 - x, py as f64 + 0.5 - y);
+                let dist = (dx * dx + dy * dy).sqrt();
+                let ang = dy.atan2(dx) + PI;
+                // Between two of the wandering radii, smoothly.
+                let f = ang / TAU * n as f64;
+                let i0 = (f as usize) % n;
+                let i1 = (i0 + 1) % n;
+                let t = f - f.floor();
+                let want = edge[i0] * (1.0 - t) + edge[i1] * t;
+                if dist > want {
+                    continue;
+                }
+                let k = dist / want;
+                // Facets: lighter towards the light, darker at the rim.
+                let lit = 0.5 + 0.75 * (1.0 - k * k) - (dx + dy) / (r * 6.0);
+                c.blend(px, py, shade(rgb, lit.clamp(0.15, 1.5)), ((want - dist) * 1.5).clamp(0.0, 1.0));
             }
         }
-        halo(c, x - r * 0.3, y - r * 0.3, r * 0.8, (255, 245, 220), 0.25);
+        halo(c, x - r * 0.3, y - r * 0.3, r * 0.7, (255, 245, 220), 0.22);
     }
 }
-
-// ── things you can hold, and things you can see ─────────────────────
-
-fn ant(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
-    wash(c, (44, 38, 30), (22, 19, 15));
-    let body = (46, 26, 16);
-    let leg = (38, 21, 13);
-    let s = u * 0.19;
-    // Head at the left, then thorax, a pinched waist, and the gaster.
-    let head = (cx - s * 3.5, cy - s * 0.2);
-    let thorax = (cx - s * 1.1, cy - s * 0.5);
-    let waist = (cx + s * 0.5, cy);
-    let gaster = (cx + s * 2.4, cy + s * 0.35);
-    // Legs: three a side, each with a knee above the body and a foot
-    // planted well out, which is what makes an ant read as an ant.
-    let hips = [thorax.0 - s * 0.6, thorax.0, thorax.0 + s * 0.6];
-    for (k, hx) in hips.iter().enumerate() {
-        for sgn in [-1.0, 1.0] {
-            let reach = s * (2.4 + k as f64 * 0.5);
-            let knee = (hx - s * 0.5 + k as f64 * s * 0.5, cy + sgn * s * 1.6);
-            let foot = (hx - s * 1.8 + k as f64 * s * 1.9, cy + sgn * reach);
-            c.line((*hx, cy - s * 0.2), knee, s * 0.17, leg, 1.0);
-            c.line(knee, foot, s * 0.13, leg, 1.0);
-            c.disc(foot.0, foot.1, s * 0.09, leg, 1.0);
-        }
-    }
-    // Antennae, elbowed halfway, as they really are.
-    for sgn in [-1.0, 1.0] {
-        let elbow = (head.0 - s * 1.1, cy + sgn * s * 0.9);
-        let tip = (head.0 - s * 2.4, cy + sgn * s * 0.3);
-        c.line((head.0 - s * 0.4, cy - s * 0.4), elbow, s * 0.12, leg, 1.0);
-        c.line(elbow, tip, s * 0.1, leg, 1.0);
-    }
-    // Mandibles.
-    for sgn in [-1.0, 1.0] {
-        c.line((head.0 - s * 0.6, cy + sgn * s * 0.25), (head.0 - s * 1.35, cy + sgn * s * 0.55), s * 0.09, leg, 1.0);
-    }
-    c.line(thorax, waist, s * 0.34, body, 1.0);
-    c.line(waist, (gaster.0 - s * 0.6, gaster.1), s * 0.5, body, 1.0);
-    ball(c, head.0, head.1, s * 0.95, body, (-0.5, -0.7));
-    ball(c, thorax.0, thorax.1, s * 0.8, body, (-0.5, -0.7));
-    ball(c, thorax.0 + s * 0.7, thorax.1 + s * 0.15, s * 0.55, body, (-0.5, -0.7));
-    ball(c, waist.0, waist.1, s * 0.26, body, (-0.5, -0.7));
-    // The gaster is an egg, not a ball: longer than it is tall.
-    for k in 0..16 {
-        let t = k as f64 / 15.0;
-        let x = gaster.0 - s * 0.9 + t * s * 2.0;
-        let rr = s * 0.95 * (1.0 - (t - 0.42).abs().powf(1.7) * 1.5).max(0.12);
-        ball(c, x, gaster.1 + t * s * 0.1, rr, body, (-0.5, -0.7));
-    }
-    // The eye, and a glint on the head.
-    c.disc(head.0 - s * 0.3, cy - s * 0.55, s * 0.17, (12, 8, 8), 1.0);
-    c.disc(head.0 - s * 0.36, cy - s * 0.62, s * 0.05, (190, 170, 150), 0.8);
+fn ant(c: &mut Canvas, _cx: f64, _cy: f64, _u: f64) {
+    fill(c, (10, 8, 7));
+    // An engraving of a worker ant, seen from above.
+    photo::inset(c, Pic::Ant, 0.96);
 }
-
-fn hand(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
-    wash(c, (26, 24, 30), (14, 13, 16));
-    let skin = (226, 178, 145);
-    let s = u * 0.2;
-    let palm = (cx, cy + s * 1.1);
-    // Palm as a stack of capsules, then four fingers and a thumb.
-    c.line((palm.0 - s * 0.7, palm.1 - s * 0.8), (palm.0 + s * 0.7, palm.1 - s * 0.8), s * 1.5, skin, 1.0);
-    c.line((palm.0 - s * 0.6, palm.1 + s * 0.6), (palm.0 + s * 0.6, palm.1 + s * 0.6), s * 1.4, skin, 1.0);
-    let tips = [1.55, 1.9, 1.8, 1.45];
-    for k in 0..4 {
-        let x = palm.0 + (k as f64 - 1.5) * s * 0.72;
-        let top = palm.1 - s * 1.5 - s * tips[k];
-        c.line((x, palm.1 - s * 1.3), (x, top), s * 0.33, skin, 1.0);
-        ball(c, x, top, s * 0.17, shade(skin, 1.05), (-0.4, -0.6));
-        // A crease at each knuckle.
-        c.line((x - s * 0.16, palm.1 - s * 1.9), (x + s * 0.16, palm.1 - s * 1.9), s * 0.05, shade(skin, 0.75), 0.8);
-    }
-    let th = (palm.0 - s * 1.5, palm.1 - s * 0.2);
-    c.line((palm.0 - s * 0.6, palm.1 + s * 0.2), th, s * 0.42, skin, 1.0);
-    ball(c, th.0, th.1, s * 0.22, shade(skin, 1.05), (-0.4, -0.6));
-    halo(c, cx - s, cy, u * 0.5, (255, 220, 200), 0.1);
+fn hand(c: &mut Canvas, _cx: f64, _cy: f64, _u: f64) {
+    photo::cover(c, Pic::Hand, 1.0);
 }
-
 fn body(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
-    wash(c, (22, 26, 38), (10, 12, 18));
-    let skin = (228, 182, 150);
-    let cloth = (70, 110, 160);
-    let s = u * 0.115;
-    let head = cy - s * 7.0;
-    // Legs, arms, trunk, head: a person standing, seen from the front.
-    for sgn in [-1.0, 1.0] {
-        c.line((cx + sgn * s * 0.75, cy + s * 0.6), (cx + sgn * s * 1.0, cy + s * 4.2), s * 0.62, cloth, 1.0);
-        c.line((cx + sgn * s * 1.0, cy + s * 4.2), (cx + sgn * s * 1.05, cy + s * 7.6), s * 0.52, cloth, 1.0);
-        ball(c, cx + sgn * s * 1.05, cy + s * 7.8, s * 0.42, (40, 40, 48), (-0.4, -0.6));
-        c.line((cx + sgn * s * 1.7, cy - s * 3.6), (cx + sgn * s * 2.3, cy - s * 0.4), s * 0.46, cloth, 1.0);
-        c.line((cx + sgn * s * 2.3, cy - s * 0.4), (cx + sgn * s * 2.5, cy + s * 2.4), s * 0.4, skin, 1.0);
-        ball(c, cx + sgn * s * 2.5, cy + s * 2.7, s * 0.3, skin, (-0.4, -0.6));
-    }
-    c.line((cx, cy - s * 4.2), (cx, cy + s * 0.8), s * 1.9, cloth, 1.0);
-    c.line((cx, cy - s * 4.4), (cx, cy - s * 3.4), s * 2.6, cloth, 1.0);
-    c.line((cx, cy - s * 5.4), (cx, cy - s * 4.6), s * 0.7, skin, 1.0);
-    ball(c, cx, head, s * 1.25, skin, (-0.45, -0.6));
-    // Hair, as a cap over the top of the head.
-    for k in 0..30 {
-        let a = PI + k as f64 / 29.0 * PI;
-        c.disc(cx + a.cos() * s * 1.2, head + a.sin() * s * 1.2, s * 0.3, (60, 42, 30), 1.0);
-    }
-    halo(c, cx, cy, u * 1.1, (150, 190, 255), 0.06);
+    fill(c, (7, 7, 14));
+    halo(c, cx, cy, u * 1.5, (90, 130, 210), 0.12);
+    photo::inset(c, Pic::Body, 0.94);
 }
-
-fn whale(c: &mut Canvas, cx: f64, cy: f64, u: f64, w: f64) {
-    wash(c, (12, 40, 70), (4, 14, 30));
-    let mut d = Dice::new(131);
-    for _ in 0..90 {
-        let x = d.next() * w;
-        let y = d.next() * c.h as f64;
-        c.disc(x, y, d.span(0.5, 1.6), (180, 220, 255), d.span(0.05, 0.2));
-    }
-    let blue = (70, 100, 135);
-    let l = u * 0.95;
-    // Body from snout to tail, tapering.
-    let nose = (cx - l, cy);
-    let tail = (cx + l, cy - u * 0.08);
-    let steps = 42;
-    let mut prev = nose;
-    for i in 1..=steps {
-        let t = i as f64 / steps as f64;
-        let p = (nose.0 + (tail.0 - nose.0) * t, nose.1 + (tail.1 - nose.1) * t - (t * PI).sin() * u * 0.04);
-        let thick = u * 0.3 * (t * PI).sin().max(0.05).powf(0.55) * (1.0 - t * 0.55);
-        c.line(prev, p, thick.max(u * 0.02), blue, 1.0);
-        prev = p;
-    }
-    // Flukes, flipper and the pale underside.
-    c.line(tail, (tail.0 + u * 0.24, tail.1 - u * 0.22), u * 0.05, blue, 1.0);
-    c.line(tail, (tail.0 + u * 0.24, tail.1 + u * 0.18), u * 0.05, blue, 1.0);
-    c.line((cx - l * 0.35, cy + u * 0.1), (cx - l * 0.1, cy + u * 0.32), u * 0.05, shade(blue, 0.85), 1.0);
-    for i in 0..steps {
-        let t = i as f64 / steps as f64;
-        let x = nose.0 + (tail.0 - nose.0) * t;
-        let y = cy + u * 0.12 * (t * PI).sin();
-        c.line((x, y), (x + l * 2.0 / steps as f64, y), u * 0.035, (190, 200, 205), 0.55);
-    }
-    c.disc(nose.0 + u * 0.12, cy - u * 0.06, u * 0.022, (10, 12, 16), 1.0);
-    // A person alongside, to the same scale: a whale is 30 metres.
-    let ps = u * 0.033;
-    let px = cx - l * 0.2;
-    let py = cy + u * 0.62;
-    c.line((px, py - ps * 3.0), (px, py), ps * 0.9, (240, 230, 220), 1.0);
-    ball(c, px, py - ps * 3.8, ps * 0.8, (240, 230, 220), (-0.4, -0.6));
-    c.line((px, py), (px - ps * 1.2, py + ps * 2.6), ps * 0.6, (240, 230, 220), 1.0);
-    c.line((px, py), (px + ps * 1.2, py + ps * 2.6), ps * 0.6, (240, 230, 220), 1.0);
-    c.line((px, py - ps * 2.4), (px - ps * 1.6, py - ps * 0.6), ps * 0.5, (240, 230, 220), 1.0);
-    c.line((px, py - ps * 2.4), (px + ps * 1.6, py - ps * 0.6), ps * 0.5, (240, 230, 220), 1.0);
+fn whale(c: &mut Canvas, cx: f64, cy: f64, u: f64, _w: f64) {
+    wash(c, (10, 32, 58), (3, 10, 24));
+    photo::inset(c, Pic::Whale, 0.98);
+    // A person alongside, to the same scale: a blue whale is thirty
+    // metres, and that is the whole point of this rung.
+    let ps = u * 0.062;
+    let (px, py) = (cx - u * 0.82, cy + u * 0.5);
+    c.line((px, py - ps * 2.8), (px, py), ps * 0.8, (235, 228, 220), 1.0);
+    c.disc(px, py - ps * 3.5, ps * 0.72, (235, 228, 220), 1.0);
+    c.line((px, py), (px - ps * 1.1, py + ps * 2.4), ps * 0.55, (235, 228, 220), 1.0);
+    c.line((px, py), (px + ps * 1.1, py + ps * 2.4), ps * 0.55, (235, 228, 220), 1.0);
+    c.line((px, py - ps * 2.2), (px - ps * 1.5, py - ps * 0.5), ps * 0.45, (235, 228, 220), 1.0);
+    c.line((px, py - ps * 2.2), (px + ps * 1.5, py - ps * 0.5), ps * 0.45, (235, 228, 220), 1.0);
 }
-
 fn pitch(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (26, 60, 30));
     let hw = u * 0.86;
@@ -734,360 +620,47 @@ fn tower(c: &mut Canvas, cx: f64, _cy: f64, u: f64, h: f64) {
     }
 }
 
-fn everest(c: &mut Canvas, cx: f64, _cy: f64, u: f64, w: f64, h: f64) {
-    wash(c, (20, 40, 90), (150, 175, 215));
-    let mut d = Dice::new(163);
-    let ground = h * 0.92;
-    // Two ranges: the far one pale, the near one dark, and the peak.
-    for (depth, rgb, hgt) in [(1.0_f64, (120, 140, 175), 0.42), (0.0, (72, 84, 110), 0.62)] {
-        let peak = cx + (depth - 0.5) * u * 0.3;
-        let top = ground - h * hgt;
-        let n = 90;
-        for k in 0..n {
-            let t = k as f64 / n as f64;
-            let x = t * w;
-            // A ridge line: a tent with rough edges.
-            let far = ((x - peak) / (u * (1.0 + depth * 0.5))).abs();
-            let y = top + far.powf(1.25) * (ground - top) + d.span(-1.0, 1.0) * u * 0.012;
-            let y = y.min(ground);
-            for yy in (y as usize)..(ground as usize).min(c.h) {
-                let f = 0.7 + 0.5 * (1.0 - (yy as f64 - y) / (ground - y + 1.0));
-                c.put((x) as usize, yy, shade(rgb, f));
-                let step = (w / n as f64).ceil() as usize;
-                for e in 1..step {
-                    if (x as usize + e) < c.w {
-                        c.put(x as usize + e, yy, shade(rgb, f));
-                    }
-                }
-            }
-            // Snow on the high ground.
-            if y < top + (ground - top) * 0.3 {
-                let step = (w / n as f64).ceil() as usize;
-                for e in 0..step.max(1) {
-                    for yy in (y as usize)..((y + u * d.span(0.04, 0.12)) as usize).min(c.h) {
-                        if x as usize + e < c.w {
-                            c.put(x as usize + e, yy, (240, 246, 252));
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // A plume of snow off the summit, the way Everest always has one.
-    for _ in 0..200 {
-        let t = d.next();
-        let x = cx + t * u * 0.9;
-        let y = ground - h * 0.62 - t * u * 0.12 + d.span(-1.0, 1.0) * u * 0.05 * t;
-        c.disc(x, y, d.span(0.5, 2.0), (255, 255, 255), (1.0 - t) * 0.35);
-    }
+fn everest(c: &mut Canvas, _cx: f64, _cy: f64, _u: f64, _w: f64, _h: f64) {
+    // The Himalaya from orbit: twenty-four kilometres of ridge and
+    // glacier, with Everest among the peaks in the middle.
+    photo::cover(c, Pic::Everest, 1.0);
 }
-
-fn city(c: &mut Canvas, w: f64, h: f64) {
-    fill(c, (5, 6, 11));
-    let mut d = Dice::new(179);
-    let (cx, cy) = (w / 2.0, h / 2.0);
-    // How built-up a place is: dense in the middle, thinning outwards,
-    // and nothing in the water.
-    let river = |x: f64| h * 0.63 + (x / w * 6.0).sin() * h * 0.09;
-    let density = |x: f64, y: f64| {
-        let (dx, dy) = ((x - cx) / (w * 0.5), (y - cy) / (h * 0.5));
-        (1.0 - (dx * dx + dy * dy).sqrt()).max(0.0).powf(1.5)
-    };
-    // Streets: two families of lines crossing at a slight angle, the
-    // way a real grid sits on the land.
-    for (ang, count) in [(0.13_f64, 34usize), (0.13 + PI / 2.0, 30)] {
-        for k in 0..count {
-            let off = (k as f64 / count as f64 - 0.5) * w * 1.3;
-            let (ca, sa) = (ang.cos(), ang.sin());
-            let n = 520;
-            for i in 0..n {
-                let t = (i as f64 / n as f64 - 0.5) * w * 1.4;
-                let x = cx + ca * t - sa * off;
-                let y = cy + sa * t + ca * off * 0.62;
-                if x < 0.0 || y < 0.0 || x >= w || y >= h {
-                    continue;
-                }
-                if (y - river(x)).abs() < h * 0.035 {
-                    continue;
-                }
-                let dens = density(x, y);
-                if dens <= 0.0 || !d.odds(0.35 + dens * 0.6) {
-                    continue;
-                }
-                let rgb = if d.odds(0.82) { (255, 202, 126) } else { (176, 212, 255) };
-                let br = dens * d.span(0.35, 1.0);
-                c.disc(x, y, d.span(0.35, 0.9), rgb, br);
-                if d.odds(0.1) {
-                    halo(c, x, y, d.span(1.5, 4.0), rgb, br * 0.3);
-                }
-            }
-        }
-    }
-    // The bright core, where the buildings crowd together.
-    for _ in 0..2200 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(2.2);
-        let x = cx + a.cos() * k * w * 0.2;
-        let y = cy + a.sin() * k * h * 0.2;
-        if (y - river(x)).abs() < h * 0.035 {
-            continue;
-        }
-        let rgb = if d.odds(0.8) { (255, 210, 140) } else { (190, 220, 255) };
-        c.disc(x, y, d.span(0.3, 0.8), rgb, (1.0 - k) * d.span(0.4, 1.0));
-    }
-    halo(c, cx, cy, w * 0.16, (255, 190, 110), 0.16);
-    // The river: dark, with the lights of the far bank reflected in it.
-    let mut prev = (0.0, river(0.0));
-    for k in 1..=90 {
-        let x = k as f64 / 90.0 * w;
-        let p = (x, river(x));
-        c.line(prev, p, h * 0.055, (7, 10, 20), 1.0);
-        prev = p;
-    }
-    for _ in 0..260 {
-        let x = d.next() * w;
-        let y = river(x) + d.span(-h * 0.025, h * 0.025);
-        c.disc(x, y, d.span(0.4, 1.4), (255, 190, 120), d.span(0.05, 0.25) * density(x, y));
-    }
-    // Two bridges.
-    for bx in [w * 0.36, w * 0.64] {
-        for k in 0..30 {
-            let y = river(bx) - h * 0.045 + k as f64 / 29.0 * h * 0.09;
-            c.disc(bx, y, 0.8, (255, 220, 160), 0.8);
-        }
-    }
+fn city(c: &mut Canvas, _w: f64, _h: f64) {
+    // A real city at night, photographed from the space station.
+    photo::cover(c, Pic::City, 1.15);
 }
-
-fn coast(c: &mut Canvas, w: f64, h: f64) {
-    fill(c, (10, 26, 52));
-    let mut d = Dice::new(191);
-    // Land on one side of a wandering line, sea on the other.
-    let n = 200;
-    let mut edge = vec![0.0; n + 1];
-    let mut x = w * 0.52;
-    for k in 0..=n {
-        x += d.span(-1.0, 1.0) * w * 0.035;
-        // Big bays as well as small wrinkles.
-        let bay = ((k as f64 / n as f64) * 7.0).sin() * w * 0.09;
-        edge[k] = (x + bay).clamp(w * 0.12, w * 0.82);
-    }
-    for y in 0..c.h {
-        let t = y as f64 / h * n as f64;
-        let k = (t as usize).min(n);
-        let e = edge[k];
-        for xx in 0..c.w {
-            if (xx as f64) < e {
-                let deep = ((e - xx as f64) / (w * 0.4)).clamp(0.0, 1.0);
-                c.put(xx, y, mix((26, 70, 120), (6, 18, 44), deep));
-            } else {
-                let inland = ((xx as f64 - e) / (w * 0.5)).clamp(0.0, 1.0);
-                let green = mix((58, 92, 52), (96, 108, 70), inland);
-                c.put(xx, y, green);
-            }
-        }
-    }
-    // Snow on the high ground inland, and cloud over the sea.
-    for _ in 0..900 {
-        let k = d.next();
-        let y = k * h;
-        let e = edge[((k * n as f64) as usize).min(n)];
-        let x = e + d.span(0.08, 0.5) * w;
-        if x < w {
-            c.disc(x, y, d.span(0.6, 2.4), (235, 240, 245), d.span(0.1, 0.5));
-        }
-    }
-    cloud(c, 193, w * 0.22, h * 0.3, w * 0.2, h * 0.16, (255, 255, 255), 160);
-    cloud(c, 197, w * 0.6, h * 0.8, w * 0.22, h * 0.14, (250, 250, 255), 140);
+fn coast(c: &mut Canvas, _w: f64, _h: f64) {
+    // Scandinavia, in the spring, with the snow still on the high ground.
+    photo::cover(c, Pic::Coast, 1.0);
 }
-
-// ── worlds ──────────────────────────────────────────────────────────
-
 fn moon(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (3, 3, 6));
     starfield(c, 211, 140);
-    let r = u * 0.62;
-    ball(c, cx, cy, r, (176, 172, 166), (-0.55, -0.45));
-    let mut d = Dice::new(223);
-    // Maria first, as broad dark patches, then craters on top.
-    for _ in 0..7 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(0.6) * 0.72;
-        let x = cx + a.cos() * r * k;
-        let y = cy + a.sin() * r * k;
-        halo(c, x, y, r * d.span(0.18, 0.4), (70, 70, 80), 0.55);
-    }
-    for _ in 0..90 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(0.5) * 0.93;
-        let x = cx + a.cos() * r * k;
-        let y = cy + a.sin() * r * k;
-        let cr = d.span(0.012, 0.075) * r;
-        // Lit rim on one side, shadow on the other.
-        c.disc(x, y, cr, shade((150, 146, 142), 0.8), 0.7);
-        c.ring(x - cr * 0.12, y - cr * 0.12, cr, (215, 212, 206), 0.5);
-        c.disc(x + cr * 0.2, y + cr * 0.2, cr * 0.55, (110, 108, 106), 0.45);
-    }
+    photo::moon_globe(c, cx, cy, u * 0.92, (-0.55, -0.45));
 }
-
 fn earth(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (2, 2, 6));
     starfield(c, 227, 120);
-    let r = u * 0.6;
-    halo(c, cx, cy, r * 1.22, (90, 150, 255), 0.35);
-    ball(c, cx, cy, r, (36, 86, 160), (-0.5, -0.45));
-    let mut d = Dice::new(229);
-    // Continents as clumps of green, then ice, then weather.
-    for _ in 0..9 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(0.55) * 0.8;
-        let x = cx + a.cos() * r * k;
-        let y = cy + a.sin() * r * k;
-        let rr = d.span(0.1, 0.3) * r;
-        for _ in 0..90 {
-            let aa = d.next() * TAU;
-            let kk = d.next().powf(0.5);
-            let px = x + aa.cos() * rr * kk;
-            let py = y + aa.sin() * rr * kk;
-            let dd = ((px - cx).powi(2) + (py - cy).powi(2)).sqrt() / r;
-            if dd > 0.99 {
-                continue;
-            }
-            let lam = 1.0 - dd * dd * 0.55;
-            c.disc(px, py, rr * 0.16, shade(mix((70, 120, 54), (140, 130, 80), d.next()), lam), 0.9);
-        }
-    }
-    for sgn in [-1.0, 1.0] {
-        halo(c, cx, cy + sgn * r * 0.9, r * 0.35, (245, 250, 255), 0.5);
-    }
-    for _ in 0..40 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(0.5) * 0.92;
-        let x = cx + a.cos() * r * k;
-        let y = cy + a.sin() * r * k;
-        cloud(c, (d.next() * 1e6) as u64, x, y, r * 0.12, r * 0.06, (255, 255, 255), 14);
-    }
-    // The night side, cut cleanly against the lit half.
-    for y in ((cy - r) as usize)..((cy + r) as usize).min(c.h) {
-        for x in ((cx - r) as usize)..((cx + r) as usize).min(c.w) {
-            let (dx, dy) = ((x as f64 - cx) / r, (y as f64 - cy) / r);
-            if dx * dx + dy * dy > 1.0 {
-                continue;
-            }
-            let lam = (dx * 0.55 + dy * 0.45 + (1.0 - dx * dx - dy * dy).max(0.0).sqrt() * 0.7).max(0.0);
-            if lam < 0.35 {
-                c.blend(x as i64, y as i64, (2, 4, 12), (0.35 - lam) / 0.35 * 0.9);
-            }
-        }
-    }
+    let r = u * 0.9;
+    halo(c, cx, cy, r * 1.16, (90, 150, 255), 0.32);
+    photo::globe(c, Pic::Earth, cx, cy, r);
 }
-
 fn jupiter(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (2, 2, 6));
     starfield(c, 233, 90);
-    let r = u * 0.66;
-    ball(c, cx, cy, r, (200, 170, 130), (-0.5, -0.45));
-    let mut d = Dice::new(239);
-    // Bands, following the curve of the ball.
-    let bands = 15;
-    for k in 0..bands {
-        let t0 = -1.0 + 2.0 * k as f64 / bands as f64;
-        let t1 = -1.0 + 2.0 * (k + 1) as f64 / bands as f64;
-        let rgb = if k % 2 == 0 {
-            mix((228, 206, 172), (246, 232, 206), d.next())
-        } else {
-            mix((150, 108, 74), (190, 150, 108), d.next())
-        };
-        for y in ((cy + t0 * r) as usize)..((cy + t1 * r) as usize).min(c.h) {
-            let dy = (y as f64 - cy) / r;
-            let hw = (1.0 - dy * dy).max(0.0).sqrt() * r;
-            for x in ((cx - hw) as usize)..((cx + hw) as usize).min(c.w) {
-                let dx = (x as f64 - cx) / r;
-                let dz = (1.0 - dx * dx - dy * dy).max(0.0).sqrt();
-                let lam = (dx * -0.5 + dy * -0.45 + dz).max(0.0) * 0.8 + 0.2;
-                // A little turbulence along each band edge.
-                let wob = ((x as f64 / r * 6.0 + k as f64).sin() * 0.04) as f64;
-                let _ = wob;
-                c.put(x, y, shade(rgb, lam));
-            }
-        }
-    }
-    // The Great Red Spot.
-    let sx = cx + r * 0.3;
-    let sy = cy + r * 0.28;
-    for y in ((sy - r * 0.16) as usize)..((sy + r * 0.16) as usize).min(c.h) {
-        for x in ((sx - r * 0.26) as usize)..((sx + r * 0.26) as usize).min(c.w) {
-            let (dx, dy) = ((x as f64 - sx) / (r * 0.26), (y as f64 - sy) / (r * 0.16));
-            let d2 = dx * dx + dy * dy;
-            if d2 > 1.0 {
-                continue;
-            }
-            c.blend(x as i64, y as i64, mix((200, 90, 60), (150, 60, 45), d2), (1.0 - d2).powf(0.5));
-        }
-    }
-    for y in ((cy - r) as usize)..((cy + r) as usize).min(c.h) {
-        for x in ((cx - r) as usize)..((cx + r) as usize).min(c.w) {
-            let (dx, dy) = ((x as f64 - cx) / r, (y as f64 - cy) / r);
-            let d2 = dx * dx + dy * dy;
-            if d2 > 1.0 {
-                continue;
-            }
-            let dz = (1.0 - d2).sqrt();
-            let lam = (dx * -0.5 + dy * -0.45 + dz * 0.75).max(0.0);
-            if lam < 0.3 {
-                c.blend(x as i64, y as i64, (6, 5, 10), (0.3 - lam) / 0.3 * 0.75);
-            }
-        }
-    }
+    photo::globe(c, Pic::Jupiter, cx, cy, u * 0.94);
 }
-
 fn sun(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (3, 2, 4));
-    let r = u * 0.42;
-    let mut d = Dice::new(251);
-    // Corona: long streamers, faint and far out.
-    for _ in 0..420 {
-        let a = d.next() * TAU;
-        let l = r * d.span(1.05, 2.6);
-        let p = (cx + a.cos() * r * 1.0, cy + a.sin() * r * 1.0);
-        let q = (cx + a.cos() * l, cy + a.sin() * l);
-        c.line(p, q, d.span(0.6, 2.4), (255, 190, 110), d.span(0.02, 0.09));
-    }
-    halo(c, cx, cy, r * 2.4, (255, 160, 60), 0.5);
-    halo(c, cx, cy, r * 1.3, (255, 220, 150), 0.8);
-    // The surface: granules and a couple of spots.
-    for y in ((cy - r) as usize)..((cy + r) as usize).min(c.h) {
-        for x in ((cx - r) as usize)..((cx + r) as usize).min(c.w) {
-            let (dx, dy) = ((x as f64 - cx) / r, (y as f64 - cy) / r);
-            let d2 = dx * dx + dy * dy;
-            if d2 > 1.0 {
-                continue;
-            }
-            // Brighter in the middle, redder at the rim, as it really is.
-            let limb = 1.0 - d2 * 0.45;
-            c.put(x, y, shade(mix((255, 245, 200), (255, 150, 40), d2.powf(0.7)), limb));
-        }
-    }
-    for _ in 0..700 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(0.5) * 0.97;
-        c.disc(cx + a.cos() * r * k, cy + a.sin() * r * k, d.span(0.4, 1.6), (255, 255, 230), d.span(0.05, 0.2));
-    }
-    for (sx, sy, sr) in [(0.25, -0.2, 0.09), (-0.32, 0.26, 0.06), (0.1, 0.4, 0.045)] {
-        let x = cx + sx * r;
-        let y = cy + sy * r;
-        c.disc(x, y, sr * r, (120, 60, 20), 0.75);
-        c.disc(x, y, sr * r * 0.55, (70, 30, 10), 0.85);
-    }
-    // Earth, to scale: one hundred and nine of these across the Sun.
-    let er = r / 109.0;
-    let ex = cx + u * 0.82;
-    let ey = cy + u * 0.5;
-    halo(c, ex, ey, (er * 6.0).max(2.5), (110, 170, 255), 0.7);
-    c.disc(ex, ey, er.max(0.8), (120, 180, 255), 1.0);
+    let r = u * 0.66;
+    halo(c, cx, cy, r * 1.9, (255, 150, 50), 0.45);
+    photo::globe(c, Pic::Sun, cx, cy, r);
+    // Earth, to scale: a hundred and nine of these across the Sun.
+    let er = (r / 109.0).max(0.9);
+    let (ex, ey) = (cx + u * 0.84, cy + u * 0.72);
+    halo(c, ex, ey, (er * 7.0).max(3.0), (110, 170, 255), 0.7);
+    c.disc(ex, ey, er, (130, 185, 255), 1.0);
 }
-
-// ── the solar system and out ────────────────────────────────────────
-
 fn inner_system(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
     fill(c, (2, 2, 6));
     starfield(c, 257, 110);
@@ -1210,11 +783,11 @@ fn orion(c: &mut Canvas, w: f64, h: f64) {
     let (cx, cy) = (w / 2.0, h / 2.0);
     // Glowing hydrogen, dust lanes in front, and the young stars that
     // light the whole thing.
-    cloud(c, 293, cx, cy, w * 0.42, h * 0.4, (200, 60, 80), 900);
-    cloud(c, 307, cx - w * 0.12, cy - h * 0.06, w * 0.24, h * 0.24, (90, 140, 220), 500);
-    cloud(c, 311, cx + w * 0.2, cy + h * 0.14, w * 0.2, h * 0.18, (220, 130, 90), 420);
+    cloud(c, 293, cx, cy, w * 0.42, h * 0.4, (200, 60, 80), 300);
+    cloud(c, 307, cx - w * 0.12, cy - h * 0.06, w * 0.24, h * 0.24, (90, 140, 220), 200);
+    cloud(c, 311, cx + w * 0.2, cy + h * 0.14, w * 0.2, h * 0.18, (220, 130, 90), 170);
     let mut d = Dice::new(313);
-    for _ in 0..260 {
+    for _ in 0..200 {
         let a = d.next() * TAU;
         let k = d.next().powf(0.7);
         let x = cx + a.cos() * w * 0.34 * k;
@@ -1258,63 +831,15 @@ fn cluster(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
 }
 
 fn galaxy(c: &mut Canvas, cx: f64, cy: f64, u: f64) {
-    fill(c, (2, 2, 7));
-    starfield(c, 347, 90);
-    let mut d = Dice::new(349);
-    let r = u * 0.92;
-    // The disc, as a broad faint wash.
-    halo(c, cx, cy, r, (70, 90, 170), 0.35);
-    // Four arms, logarithmic, with young blue stars along them.
-    for arm in 0..4 {
-        let off = arm as f64 / 4.0 * TAU;
-        for _ in 0..2200 {
-            let t = d.next().powf(0.7);
-            let ang = off + t * 3.1;
-            let rr = r * (0.09 + t * 0.9);
-            // Scatter across the arm, wider further out.
-            let spread = (0.02 + t * 0.09) * r;
-            let x = cx + ang.cos() * rr + d.span(-1.0, 1.0) * spread;
-            let y = cy + ang.sin() * rr * 0.42 + d.span(-1.0, 1.0) * spread * 0.42;
-            let young = d.odds(0.35);
-            let rgb = if young {
-                mix((150, 190, 255), (230, 240, 255), d.next())
-            } else {
-                mix((255, 220, 170), (255, 245, 220), d.next())
-            };
-            let br = d.span(0.2, 0.9) * (1.0 - t * 0.35);
-            c.disc(x, y, d.span(0.3, 1.0), rgb, br);
-            if young && d.odds(0.03) {
-                halo(c, x, y, d.span(3.0, 9.0), (120, 170, 255), 0.3);
-            }
-        }
-        // Dust in front of each arm, a little inside it.
-        for _ in 0..500 {
-            let t = d.next().powf(0.7);
-            let ang = off + t * 3.1 - 0.16;
-            let rr = r * (0.12 + t * 0.88);
-            let x = cx + ang.cos() * rr;
-            let y = cy + ang.sin() * rr * 0.42;
-            halo(c, x, y, d.span(2.0, 7.0), (10, 6, 14), d.span(0.15, 0.4));
-        }
-    }
-    // The bulge, and the bar across it.
-    for _ in 0..3000 {
-        let a = d.next() * TAU;
-        let k = d.next().powf(2.2);
-        let x = cx + a.cos() * k * r * 0.3;
-        let y = cy + a.sin() * k * r * 0.14;
-        c.disc(x, y, d.span(0.3, 0.9), mix((255, 225, 175), (255, 250, 230), d.next()), (1.0 - k) * 0.8);
-    }
-    halo(c, cx, cy, r * 0.3, (255, 220, 160), 0.6);
-    halo(c, cx, cy, r * 0.1, (255, 245, 215), 0.8);
-    // The Sun, two thirds of the way out.
-    let sx = cx + r * 0.62;
-    let sy = cy + r * 0.16;
-    c.ring(sx, sy, u * 0.05, (120, 255, 180), 0.8);
-    c.disc(sx, sy, 1.2, (220, 255, 230), 1.0);
+    // Our own galaxy, as it would look from outside: a barred spiral,
+    // drawn from what the surveys have mapped.
+    photo::cover(c, Pic::Galaxy, 1.0);
+    // And the Sun, in a gap between two arms, two thirds of the way out.
+    let (sx, sy) = (cx - u * 0.26, cy + u * 0.52);
+    halo(c, sx, sy, u * 0.1, (120, 255, 180), 0.35);
+    c.ring(sx, sy, u * 0.055, (150, 255, 200), 0.9);
+    c.disc(sx, sy, u * 0.012, (240, 255, 245), 1.0);
 }
-
-/// One spiral galaxy, small enough to sit beside others.
 fn small_spiral(c: &mut Canvas, d: &mut Dice, x: f64, y: f64, r: f64, tilt: f64, squash: f64) {
     halo(c, x, y, r * 1.15, (66, 86, 165), 0.42);
     halo(c, x, y, r * 0.72, (74, 94, 175), 0.3);

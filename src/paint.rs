@@ -178,7 +178,9 @@ pub fn cloud(c: &mut Canvas, seed: u64, cx: f64, cy: f64, rx: f64, ry: f64, rgb:
         let k = d.next().powf(0.55);
         let x = cx + t.cos() * rx * k;
         let y = cy + t.sin() * ry * k;
-        let r = d.span(0.02, 0.16) * rx.max(ry);
+        // A puff is capped: a halo costs the square of its radius, and
+        // a wide cloud of big puffs costs more than a whole page.
+        let r = (d.span(0.02, 0.16) * rx.max(ry)).min(90.0);
         let a = (1.0 - k) * d.span(0.05, 0.22);
         halo(c, x, y, r, rgb, a);
     }

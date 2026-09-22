@@ -41,6 +41,27 @@ The bar along the bottom runs over every power of ten from 10⁻³⁵ metres to 
 
 The size in the top bar is the width of the picture, not the width of the thing in it. So each thing has room around it.
 
+## The photographs
+
+Eleven rungs use a real picture rather than a drawing, because nobody draws these better than a camera did. All are public domain.
+
+| Rung | Picture |
+|---|---|
+| Ant | Pearson Scott Foresman, an engraved worker ant |
+| Human hand | a CC0 photograph |
+| Human body | a public-domain silhouette |
+| Blue whale | Pearson Scott Foresman, an engraving |
+| Mount Everest | NASA, the Himalaya from orbit |
+| City at night | NASA, New York from the space station |
+| Coastline from orbit | NASA MODIS, Scandinavia in spring |
+| The Moon | NASA LRO, the same height map the `moon` app uses |
+| The Earth | NASA, the Blue Marble from Apollo 17 |
+| Jupiter | NASA and the Hubble telescope |
+| The Sun | NASA, the Solar Dynamics Observatory |
+| The Milky Way | NASA and JPL-Caltech, how our galaxy looks from outside |
+
+Each picture is decoded once and kept. The last three rungs you looked at are kept whole, so stepping back is instant.
+
 ## Command line
 
 ```bash
