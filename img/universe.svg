@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="deep" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#05040f"/>
+    </radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fff6e0"/>
+      <stop offset="55%" style="stop-color:#ffc06a"/>
+      <stop offset="100%" style="stop-color:#f74c00;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffd9a0;stop-opacity:.95"/>
+      <stop offset="100%" style="stop-color:#f74c00;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="124" fill="url(#deep)"/>
+
+  <!-- the rungs of the ladder, as rings that double outwards -->
+  <g fill="none" stroke="#3c4b78" stroke-opacity=".55">
+    <circle cx="128" cy="128" r="16" stroke-width="1"/>
+    <circle cx="128" cy="128" r="32" stroke-width="1"/>
+    <circle cx="128" cy="128" r="54" stroke-width="1.2"/>
+    <circle cx="128" cy="128" r="82" stroke-width="1.2"/>
+    <circle cx="128" cy="128" r="114" stroke-width="1.4"/>
+  </g>
+
+  <!-- a spiral of worlds, small at the middle and larger outwards -->
+  <g fill="#cfe0ff">
+    <circle cx="140" cy="126" r="1.6" opacity=".9"/>
+    <circle cx="152" cy="140" r="2.4" opacity=".9"/>
+    <circle cx="150" cy="166" r="3.4" opacity=".9"/>
+    <circle cx="120" cy="184" r="4.6" opacity=".9"/>
+    <circle cx="82" cy="170" r="6.2" opacity=".85"/>
+    <circle cx="62" cy="126" r="8.4" opacity=".8"/>
+    <circle cx="86" cy="72" r="11" fill="#9ec2ff" opacity=".8"/>
+    <circle cx="156" cy="52" r="14" fill="#ffd9a0" opacity=".85"/>
+  </g>
+
+  <!-- the blazing middle: everything starts small -->
+  <circle cx="128" cy="128" r="30" fill="url(#glow)"/>
+  <circle cx="128" cy="128" r="5" fill="#fff4dc"/>
+
+  <!-- a person, halfway up the ladder -->
+  <g fill="#f74c00">
+    <circle cx="196" cy="128" r="5"/>
+    <rect x="193.4" y="134" width="5.2" height="15" rx="2.4"/>
+    <rect x="186" y="137" width="20" height="4" rx="2"/>
+    <rect x="191" y="148" width="4" height="14" rx="2"/>
+    <rect x="197" y="148" width="4" height="14" rx="2"/>
+  </g>
+
+  <!-- the far rim: the oldest light there is -->
+  <circle cx="128" cy="128" r="124" fill="none" stroke="#f74c00" stroke-width="3" stroke-opacity=".9"/>
+  <circle cx="128" cy="128" r="118" fill="none" stroke="#ffb066" stroke-width="1" stroke-opacity=".5"/>
+</svg>
