@@ -77,7 +77,7 @@ fn main() {
             }
             "-l" | "--list" => {
                 for (i, r) in RUNGS.iter().enumerate() {
-                    println!("{:>3}  {:<24} {}", i + 1, r.name, human(r.span));
+                    println!("{:>3}  {:<24} {}", i + 1, r.name, human(r.size));
                 }
                 return;
             }
@@ -94,7 +94,7 @@ fn main() {
     use std::io::IsTerminal;
     if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
         let i = start.unwrap_or(HUMAN);
-        println!("{}  ·  {}", RUNGS[i].name, human(RUNGS[i].span));
+        println!("{}  ·  {}", RUNGS[i].name, human(RUNGS[i].size));
         println!("{}", RUNGS[i].blurb);
         return;
     }
@@ -218,8 +218,12 @@ fn human(m: f64) -> String {
         (m * 1e3, "mm")
     } else if m < 1e3 {
         (m, "m")
-    } else if m < AU * 0.5 {
+    } else if m < 1e8 {
         (m / 1e3, "km")
+    } else if m < 1e9 {
+        (m / 1e6, "thousand km")
+    } else if m < AU * 0.5 {
+        (m / 1e9, "million km")
     } else if m < LY * 0.5 {
         (m / AU, "AU")
     } else if m < LY * 1e3 {
@@ -278,7 +282,7 @@ fn draw_header(app: &App, cols: u16) {
         " {}  {}  {}",
         style::rgb("universe", Some(RUST_RGB), None, "b"),
         style::bold(r.name),
-        style::rgb(&human(r.span), Some(HEAD_RGB), None, "")
+        style::rgb(&human(r.size), Some(HEAD_RGB), None, "")
     );
     let right = format!("{} of {} ", app.step + 1, RUNGS.len());
     let pad = (cols as usize)
@@ -359,7 +363,7 @@ fn draw_foot(app: &App, cols: u16, rows: u16) {
     let lw = crust::display_width(&lo) + 1;
     let rw = crust::display_width(&hi) + 1;
     let bar = w.saturating_sub(lw + rw + 2).max(4);
-    let t = ((r.span.log10() - LOW) / (HIGH - LOW)).clamp(0.0, 1.0);
+    let t = ((r.size.log10() - LOW) / (HIGH - LOW)).clamp(0.0, 1.0);
     let at = ((t * (bar - 1) as f64).round() as usize).min(bar - 1);
     let mut track = String::new();
     for i in 0..bar {
@@ -420,7 +424,11 @@ mod tests {
     #[test]
     fn the_ladder_only_ever_grows() {
         for pair in RUNGS.windows(2) {
-            assert!(pair[1].span > pair[0].span, "{} is not larger than {}", pair[1].name, pair[0].name);
+            assert!(pair[1].size > pair[0].size, "{} is not larger than {}", pair[1].name, pair[0].name);
+            assert!(pair[1].span > pair[0].span, "{}'s picture is not wider", pair[1].name);
+        }
+        for r in RUNGS {
+            assert!(r.span > r.size, "{} has no room around it", r.name);
         }
         assert_eq!(RUNGS[HUMAN].name, "Human body", "the app opens on a person");
     }
@@ -428,7 +436,7 @@ mod tests {
     #[test]
     fn every_rung_fits_on_the_ruler() {
         for r in RUNGS {
-            let e = r.span.log10();
+            let e = r.size.log10();
             assert!(e >= LOW && e <= HIGH, "{} sits off the ruler at 1e{e}", r.name);
         }
     }
@@ -439,6 +447,8 @@ mod tests {
         assert_eq!(human(2.5e-3), "2.50 mm");
         assert_eq!(human(3e-10), "300 pm");
         assert_eq!(human(1.2e4), "12.0 km");
+        assert_eq!(human(1.39e9), "1.39 million km");
+        assert_eq!(human(1.3982e8), "140 thousand km");
         assert!(human(6e11).ends_with("AU"), "an orbit is measured in AU");
         assert_eq!(human(5e17), "52.9 light years");
         assert_eq!(human(3e21), "317 thousand light years");

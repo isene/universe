@@ -39,17 +39,19 @@ Nothing moves by itself. A picture is painted when you change rung or resize the
 
 The bar along the bottom runs over every power of ten from 10⁻³⁵ metres to 10²⁷. The diamond is where you are.
 
-The size in the top bar is the width of the picture, not the width of the thing in it. So each thing has room around it.
+The size in the top bar is the thing itself, not the picture. Earth's orbit reads 1 AU, and Everest reads 8.85 km. The picture is always wider than that, so each thing has room around it.
 
 ## The photographs
 
-Eleven rungs use a real picture rather than a drawing, because nobody draws these better than a camera did. All are public domain.
+Twelve rungs use a real picture rather than a drawing, because nobody draws these better than a camera did. All are public domain.
+
+They come in two kinds, and each kind keeps to its own part of the ladder. The four living things are white line work on black. Everything from a mountain upwards is a photograph.
 
 | Rung | Picture |
 |---|---|
 | Ant | Pearson Scott Foresman, an engraved worker ant |
-| Human hand | a CC0 photograph |
-| Human body | a public-domain silhouette |
+| Human hand | a CC0 photograph, reduced to line work |
+| Human body | NASA, the two figures from the Pioneer plaque |
 | Blue whale | Pearson Scott Foresman, an engraving |
 | Mount Everest | NASA, the Himalaya from orbit |
 | City at night | NASA, New York from the space station |

@@ -1,6 +1,6 @@
 [package]
 name = "universe"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Every scale of the universe, from the quantum foam to the cosmic web"
 license = "Unlicense"
