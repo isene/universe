@@ -25,6 +25,7 @@ You are almost exactly halfway. That is the point of the app.
 | `PgUp` / `PgDn` | Five rungs at a time |
 | `H` | Back to the human body |
 | `g` / `G` | The smallest and the largest |
+| `Ctrl+A` | A Claude session about the rung on screen (`claude` on the PATH); `/exit` comes back |
 | `q` | Quit |
 
 The rung you were on is remembered in `~/.universe`, so the app opens where you left it.

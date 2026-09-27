@@ -120,6 +120,21 @@ fn main() {
         };
         match key.as_str() {
             "q" | "ESC" => break,
+            // Ctrl+A, as in every Fe2O3 app: a Claude session about the
+            // rung on screen.
+            "C-A" => {
+                if let Some(d) = app.pixels.as_mut() {
+                    d.clear_all();
+                }
+                let intro = "I am in universe, my app that climbs every scale from the quantum foam to the cosmic web.";
+                let started = crust::claude_session("Universe", intro, &claude_context(app.step));
+                Crust::clear_screen();
+                status.full_refresh();
+                draw_all(&mut app, &mut status, cols, rows);
+                if !started {
+                    status.say(" claude is not on the PATH");
+                }
+            }
             "UP" | "k" | "+" | "=" | "l" | "RIGHT" => {
                 if app.step + 1 < RUNGS.len() {
                     app.step += 1;
@@ -180,6 +195,20 @@ fn main() {
         d.clear_all();
     }
     Crust::cleanup();
+}
+
+/// The rung on screen for Claude, with the whole ladder for comparing.
+fn claude_context(step: usize) -> String {
+    let r = &RUNGS[step];
+    let mut ctx = format!(
+        "On screen: rung {} of {}, {}, {} across.\n{}\n\nThe whole ladder:\n",
+        step + 1, RUNGS.len(), r.name, human(r.size), r.blurb,
+    );
+    for (i, r) in RUNGS.iter().enumerate() {
+        let here = if i == step { "  <- on screen" } else { "" };
+        ctx.push_str(&format!("{:>3}  {}, {}{here}\n", i + 1, r.name, human(r.size)));
+    }
+    ctx
 }
 
 /// Where the app keeps the rung you left off on.
@@ -412,7 +441,7 @@ fn help_line() -> String {
         style::rgb("↑↓", Some(HEAD_RGB), None, "b"),
         style::dim("out and in"),
         style::rgb("H", Some(HEAD_RGB), None, "b"),
-        style::dim("human · g G ends · PgUp PgDn five at a time · q quits"),
+        style::dim("human · g G ends · PgUp PgDn five at a time · Ctrl+A Claude · q quits"),
         style::dim(&format!("v{}", env!("CARGO_PKG_VERSION")))
     )
 }
