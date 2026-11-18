@@ -442,7 +442,7 @@ fn help_line() -> String {
         style::dim("out and in"),
         style::rgb("H", Some(HEAD_RGB), None, "b"),
         style::dim(&crust::key_help("human · g G ends · PgUp PgDn five at a time · Ctrl+A Claude · q quits")),
-        style::dim(&format!("v{}", env!("CARGO_PKG_VERSION")))
+        crust::version_tag("universe", env!("CARGO_PKG_VERSION"))
     )
 }
 
